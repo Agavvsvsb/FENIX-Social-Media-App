@@ -2,9 +2,12 @@ import { useContext, createContext, useState, useMemo } from "react";
 
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 
-import App from "./App";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+
+import AppRouter from "./AppRouter";
 
 const AppContext = createContext();
+const queryClient = new QueryClient();
 
 export function useApp() {
     return useContext(AppContext);
@@ -17,17 +20,15 @@ export default function AppProvider() {
     const [Auth, setAuth] = useState(true);
 
     const theme = useMemo(() => {
-        return createTheme(
-            {
-                palette: {
-                    mode,
-                },
+        return createTheme({
+            palette: {
+                mode,
             },
-            [mode]
-        );
-    });
+        });
+    }, [mode]);
+
     return (
-        <AppContext
+        <AppContext.Provider
             value={{
                 showForm,
                 setShowForm,
@@ -39,10 +40,12 @@ export default function AppProvider() {
                 setAuth,
             }}
         >
-            <ThemeProvider theme={theme}>
-                <App />
-                <CssBaseline />
-            </ThemeProvider>
-        </AppContext>
+            <QueryClientProvider client={queryClient}>
+                <ThemeProvider theme={theme}>
+                    <AppRouter />
+                    <CssBaseline />
+                </ThemeProvider>
+            </QueryClientProvider>
+        </AppContext.Provider>
     );
 }

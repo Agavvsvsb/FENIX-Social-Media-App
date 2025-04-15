@@ -16,10 +16,12 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
 
 import { useApp } from "../AppProvider";
-import { grey } from "@mui/material/colors";
+
+import { useNavigate } from "react-router";
 
 export default function AppDrawer() {
     const { showDrawer, setShowDrawer, Auth, setAuth } = useApp();
+    const navigate = useNavigate();
 
     const toggleDrawer = (newOpen) => () => {
         setShowDrawer(newOpen);
@@ -35,7 +37,7 @@ export default function AppDrawer() {
             <Divider />
             <List>
                 <ListItem disablePadding>
-                    <ListItemButton>
+                    <ListItemButton onClick={() => navigate("/")}>
                         <ListItemIcon>
                             <HomeIcon />
                         </ListItemIcon>
@@ -48,7 +50,7 @@ export default function AppDrawer() {
             {Auth && (
                 <List>
                     <ListItem disablePadding>
-                        <ListItemButton>
+                        <ListItemButton onClick={() => navigate("/profile")}>
                             <ListItemIcon>
                                 <Person4Icon />
                             </ListItemIcon>
@@ -73,7 +75,7 @@ export default function AppDrawer() {
             {!Auth && (
                 <List>
                     <ListItem disablePadding>
-                        <ListItemButton>
+                        <ListItemButton onClick={() => navigate("/register")}>
                             <ListItemIcon>
                                 <AppRegistrationIcon />
                             </ListItemIcon>
@@ -83,7 +85,7 @@ export default function AppDrawer() {
                     <ListItem disablePadding>
                         <ListItemButton
                             onClick={() => {
-                                setAuth(true);
+                                navigate("/login");
                             }}
                         >
                             <ListItemIcon>

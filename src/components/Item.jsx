@@ -30,7 +30,7 @@ export default function Item({ post, remove }) {
                             }}
                         />
                         <Typography sx={{ fontWeight: "bold" }}>
-                            {post.user}
+                            {post.user.name}
                         </Typography>
                     </Box>
                     <IconButton size="medium" onClick={() => remove(post.id)}>
@@ -38,7 +38,7 @@ export default function Item({ post, remove }) {
                     </IconButton>
                 </Box>
 
-                <Typography>{post.content}</Typography>
+                <Typography sx={{ mt: 2 }}>{post.content}</Typography>
             </CardContent>
         </Card>
     );
