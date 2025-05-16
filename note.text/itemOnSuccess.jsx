@@ -17,9 +17,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ThumbUpAltOutlined from '@mui/icons-material/ThumbUpAltOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
-
+import { useState } from "react";
 
 const api = "http://localhost:8080";
 
@@ -62,79 +60,26 @@ const unlikePost = async (postId) => {
 export default function Item({ post, remove }) {
     const {Auth} = useApp();
     const queryClient = useQueryClient();
-    const navigate = useNavigate();
-    
-    
-    const [optimisticLiked, setOptimisticLiked] = useState(null);
-    const [optimisticLikeCount, setOptimisticLikeCount] = useState(post.likes?.length || 0);
-    
-    
-    const serverIsLiked = post.likes?.some(like => like.userId === Auth?.id);
-    
-    
-    const isLiked = optimisticLiked !== null ? optimisticLiked : serverIsLiked;
-    
-    
-    useEffect(() => {
-        setOptimisticLiked(serverIsLiked);
-        setOptimisticLikeCount(post.likes?.length || 0);
-    }, [serverIsLiked, post.likes?.length]);
+
+    const isLiked = post.likes?.some(like => like.userId === Auth?.id);
 
     const {mutate: like} = useMutation({
         mutationFn: likePost,
-        
-        onMutate: async () => {
-            // Cancel any outgoing refetches
-            await queryClient.cancelQueries({ queryKey: ["posts"] });
-            
-            // Save previous state
-            const previousPosts = queryClient.getQueryData(["posts"]);
-            
-            // Optimistically update local state
-            setOptimisticLiked(true);
-            setOptimisticLikeCount(prev => prev + 1);
-            
-            // Return previous state for rollback if needed
-            return { previousPosts };
-        },
-        onError: (err) => {
-            // Revert optimistic update on error
-            setOptimisticLiked(serverIsLiked);
-            setOptimisticLikeCount(post.likes?.length || 0);
-            console.error(err);
-        },
-        onSettled: () => {
-            // Always refetch after error or success to sync with server
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["posts"] });
+        },
+        onError: (error) => {
+            console.error(error);
         }
     });
 
     const { mutate: unlike } = useMutation({
         mutationFn: unlikePost,
-        // Optimistically update UI before server responds
-        onMutate: async () => {
-            // Cancel any outgoing refetches
-            await queryClient.cancelQueries({ queryKey: ["posts"] });
-            
-            // Save previous state
-            const previousPosts = queryClient.getQueryData(["posts"]);
-            
-            // Optimistically update local state
-            setOptimisticLiked(false);
-            setOptimisticLikeCount(prev => Math.max(0, prev - 1));
-            
-            // Return previous state for rollback if needed
-            return { previousPosts };
-        },
-        onError: (err) => {
-            // Revert optimistic update on error
-            setOptimisticLiked(serverIsLiked);
-            setOptimisticLikeCount(post.likes?.length || 0);
-            console.error(err);
-        },
-        onSettled: () => {
-            // Always refetch after error or success to sync with server
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["posts"] });
+        },
+        onError: (error) => {
+            console.error(error);
         }
     });
 
@@ -188,13 +133,11 @@ export default function Item({ post, remove }) {
                 >
                    
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <IconButton size="small" sx={{ mr: -0.5, mt: 0.4 }} onClick={() => {
-                            navigate(`/posts/${post.id}`);
-                        }}>
+                        <IconButton size="small" sx={{ mr: -0.5, mt: 0.4 }}>
                             <ChatBubbleOutlineIcon fontSize="small" />
                         </IconButton>
                         <Typography variant="body2" sx={{ ml: 0.5 }}>
-                            {post.comments?.length || 0}
+                            5
                         </Typography>
                     </Box>
 
@@ -212,7 +155,7 @@ export default function Item({ post, remove }) {
                             )}
                         </IconButton>
                         <Typography variant="body2" sx={{ ml: 0.5 }}>
-                            {optimisticLikeCount}
+                            {post.likes?.length || 0}
                         </Typography>
                     </Box>
                 </Box>

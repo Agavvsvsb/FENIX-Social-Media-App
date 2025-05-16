@@ -1,9 +1,27 @@
-import { Box, Typography, OutlinedInput, Button } from "@mui/material";
+
+import { Alert, Box, Typography, OutlinedInput, Button } from "@mui/material";
 
 import { useApp } from "../AppProvider";
 import { useNavigate } from "react-router";
 
 import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
+
+async function loginUser(userData) {
+    const res = await fetch("http://localhost:8080/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+    });
+    
+    if (!res.ok) {
+        throw new Error("User not found or incorrect password");
+    }
+    
+    return res.json();
+}
 
 export default function Login() {
     const { setAuth } = useApp();
@@ -16,14 +34,30 @@ export default function Login() {
         formState: { errors },
     } = useForm();
 
-    const submit = () => {
-        setAuth(true);
-        navigate("/");
+    const login = useMutation({
+        mutationFn: loginUser,
+        onSuccess: (data) => {
+            // Store the token in localStorage
+            localStorage.setItem("token", data.token);
+            // Set the user object in Auth state
+            setAuth(data.user);
+            navigate("/");
+        },
+    });
+
+    const submit = (userData) => {
+        login.mutate(userData);
     };
 
     return (
-        <Box>
+        <Box style={{ marginTop: 80}}>
             <Typography variant="h4">Login</Typography>
+
+            {login.isError && (
+                <Alert severity="warning" sx={{ mt: 2 }}>
+                    {login.error.message}
+                </Alert>
+            )}
 
             <form onSubmit={handleSubmit(submit)}>
                 <OutlinedInput
@@ -38,6 +72,7 @@ export default function Login() {
 
                 <OutlinedInput
                     {...register("password", { required: true })}
+                    type="password"
                     fullWidth
                     placeholder="password"
                     sx={{ mt: 2 }}
@@ -51,9 +86,19 @@ export default function Login() {
                     type="submit"
                     fullWidth
                     variant="contained"
+                    disabled={login.isPending}
                 >
-                    Login
+                    {login.isPending ? "Logging in..." : "Login"}
                 </Button>
+                <Typography variant="body2" sx={{ mt: 2 }}>
+                    Don't have an account?{" "}
+                    <span
+                        style={{ cursor: "pointer", color: "blue" }}
+                        onClick={() => navigate("/register")}
+                    >
+                        Register here
+                    </span>
+                </Typography>
             </form>
         </Box>
     );

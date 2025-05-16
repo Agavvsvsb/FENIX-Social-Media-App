@@ -1,17 +1,12 @@
 import { AppBar, Toolbar, Typography, IconButton, Box } from "@mui/material";
-
 import { Add as AddIcon, ArrowBack } from "@mui/icons-material";
-
-import LightModeIcon from "@mui/icons-material/LightMode";
-import DarkModeIcon from "@mui/icons-material/DarkMode";
 import MenuIcon from "@mui/icons-material/Menu";
-
 import { useLocation, useNavigate } from "react-router";
-
 import { useApp } from "../AppProvider";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
-    const { showForm, setShowForm, mode, setMode, setShowDrawer } = useApp();
+    const { showForm, setShowForm, setShowDrawer } = useApp();
     const { pathname } = useLocation();
     const navigate = useNavigate();
 
@@ -43,31 +38,11 @@ export default function Header() {
                 <Box sx={{ display: "flex", gap: 3 }}>
                     <IconButton
                         sx={{ color: "inherit" }}
-                        onClick={() => {
-                            setShowForm(!showForm);
-                        }}
+                        onClick={() => setShowForm(!showForm)}
                     >
                         <AddIcon />
                     </IconButton>
-                    {mode == "light" ? (
-                        <IconButton
-                            sx={{ color: "inherit" }}
-                            onClick={() => {
-                                setMode("dark");
-                            }}
-                        >
-                            <DarkModeIcon />
-                        </IconButton>
-                    ) : (
-                        <IconButton
-                            sx={{ color: "inherit" }}
-                            onClick={() => {
-                                setMode("light");
-                            }}
-                        >
-                            <LightModeIcon />
-                        </IconButton>
-                    )}
+                    <ThemeToggle />
                 </Box>
             </Toolbar>
         </AppBar>

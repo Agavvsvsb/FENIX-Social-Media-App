@@ -7,12 +7,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 async function postPost(content) {
     const api = "http://localhost:8080/posts";
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+        throw new Error("Authentication required");
+    }
 
     const res = await fetch(api, {
         method: "POST",
         body: JSON.stringify({ content }),
         headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
         },
     });
 

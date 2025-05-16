@@ -4,8 +4,23 @@ import { useApp } from "../AppProvider";
 import { useNavigate } from "react-router";
 
 import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
 
-export default function Login() {
+async function postUser(userdata) {
+    const res = await fetch("http://localhost:8080/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userdata),
+    });
+    if (!res.ok) {
+        throw new Error("Failed to register");
+    }
+    return res.json();
+}
+
+export default function Register() {
     const { setAuth } = useApp();
 
     const navigate = useNavigate();
@@ -16,15 +31,22 @@ export default function Login() {
         formState: { errors },
     } = useForm();
 
-    const Register = () => {
-        navigate("/login");
+    const create = useMutation({
+        mutationFn: postUser,
+        onSuccess: () => {
+            navigate("/login");
+        },
+    });
+
+    const submitRegister = userdata => {
+        create.mutate(userdata);
     };
 
     return (
         <Box>
             <Typography variant="h4">Register</Typography>
 
-            <form onSubmit={handleSubmit(Register)}>
+            <form onSubmit={handleSubmit(submitRegister)}>
                 <OutlinedInput
                     {...register("name", { required: true })}
                     fullWidth
@@ -67,7 +89,7 @@ export default function Login() {
                     fullWidth
                     variant="contained"
                 >
-                    Login
+                    Register
                 </Button>
             </form>
         </Box>
