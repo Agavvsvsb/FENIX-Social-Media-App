@@ -14,13 +14,14 @@ export function useApp() {
 }
 
 export default function AppProvider() {
-    const [showForm, setShowForm] = useState(false);
+    const [showForm, setShowForm] = useState(true);
     const [mode, setMode] = useState(() => {
         return localStorage.getItem('theme') || 'light';
     });
-    const [showDrawer, setShowDrawer] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const [Auth, setAuth] = useState(null);
     const [isAuthLoading, setIsAuthLoading] = useState(true);
+    const [showDrawer, setShowDrawer] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -63,7 +64,7 @@ export default function AppProvider() {
                 ...(mode === 'dark' ? {
                     background: {
                         default: '#121212',
-                        paper: '#1e1e1e',
+                        paper: '#262525',
                     },
                 } : {
                     background: {
@@ -82,6 +83,8 @@ export default function AppProvider() {
                 setShowForm,
                 mode,
                 setMode,
+                mobileOpen,
+                setMobileOpen,
                 showDrawer,
                 setShowDrawer,
                 Auth,

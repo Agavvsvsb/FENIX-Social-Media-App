@@ -50,7 +50,7 @@ export default function Login() {
     };
 
     return (
-        <Box style={{ marginTop: 80}}>
+        <Box style={{ marginTop: 80}} sx={{ maxWidth: "800px", mx: "auto"}}>
             <Typography variant="h4">Login</Typography>
 
             {login.isError && (
@@ -64,7 +64,7 @@ export default function Login() {
                     {...register("username", { required: true })}
                     fullWidth
                     placeholder="username"
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 4 }}
                 />
                 {errors.username && (
                     <Typography color="error">Username is required</Typography>
@@ -75,14 +75,14 @@ export default function Login() {
                     type="password"
                     fullWidth
                     placeholder="password"
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 4 }}
                 />
                 {errors.password && (
                     <Typography color="error">Password is required</Typography>
                 )}
 
                 <Button
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 4 }}
                     type="submit"
                     fullWidth
                     variant="contained"
@@ -90,7 +90,8 @@ export default function Login() {
                 >
                     {login.isPending ? "Logging in..." : "Login"}
                 </Button>
-                <Typography variant="body2" sx={{ mt: 2 }}>
+                <Box sx={{ mt: 2 }}>
+                <Typography variant="body">
                     Don't have an account?{" "}
                     <span
                         style={{ cursor: "pointer", color: "blue" }}
@@ -99,6 +100,7 @@ export default function Login() {
                         Register here
                     </span>
                 </Typography>
+                </Box>
             </form>
         </Box>
     );

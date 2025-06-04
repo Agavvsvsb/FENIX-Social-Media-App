@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Card, 
   CardContent, 
@@ -16,8 +16,9 @@ import { useApp } from "../AppProvider";
 import Comment from "../components/Comment";
 import CommentForm from "../components/CommentForm";
 import ThumbUpAltOutlined from '@mui/icons-material/ThumbUpAltOutlined';
+import InsertCommentIcon from '@mui/icons-material/InsertComment';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+
 
 const api = "http://localhost:8080";
 
@@ -46,15 +47,160 @@ async function fetchPost(postId) {
 
 export default function Post() {
   const { id } = useParams();
+const postId = Number(id);
   const { Auth } = useApp();
+  const queryClient = useQueryClient();
   const [showComments, setShowComments] = useState(true);
+  const [optimisticLiked, setOptimisticLiked] = useState(false);
+  const [optimisticLikeCount, setOptimisticLikeCount] = useState(null);
   
+
+
+
   const { data, error } = useQuery({
-    queryKey: ["posts", id],
-    queryFn: () => fetchPost(id),
-    enabled: !!id && !!Auth,
+    queryKey: ["post", postId],
+    queryFn: () => fetchPost(postId),
+    enabled: !!postId && !!Auth,
   });
 
+
+  useEffect(() => {
+    if (data?.post) {
+      const userLiked = data.post.likes.some(like => like.userId === Auth?.id);
+      setOptimisticLiked(userLiked);
+    }
+  }, [data?.post, Auth?.id]);
+
+
+  const { mutate: like } = useMutation({
+    mutationFn: async (mutationPostId) => {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${api}/posts/${postId}/like`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to like post");
+      return res.json();
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["post", postId] });
+      // Also cancel any pending refetches to the posts list
+      await queryClient.cancelQueries({ queryKey: ["posts"] });
+      
+      const previousPost = queryClient.getQueryData(["post", postId]);
+      const currentLikes = previousPost?.post?.likes?.length || 0;
+      const isLiked = previousPost?.post?.likes?.some(like => like.userId === Auth?.id);
+      
+      // Only update if not already liked
+      if (!isLiked) {
+        setOptimisticLikeCount(currentLikes + 1);
+      }
+      setOptimisticLiked(true);
+      
+      // Update the posts list optimistically as well
+      const previousPosts = queryClient.getQueryData(["posts"]);
+      if (previousPosts?.posts) {
+        const updatedPosts = {
+          ...previousPosts,
+          posts: previousPosts.posts.map(p => {
+            if (p.id === postId) {
+              // Create a new likes array with the current user's like
+              const updatedLikes = [...(p.likes || [])];
+              if (!updatedLikes.some(like => like.userId === Auth?.id)) {
+                updatedLikes.push({ userId: Auth?.id });
+              }
+              return { ...p, likes: updatedLikes };
+            }
+            return p;
+          })
+        };
+        queryClient.setQueryData(["posts"], updatedPosts);
+      }
+      
+      return { previousPost, previousPosts };
+    },
+    onError: ( context) => {
+      if (context?.previousPost) {
+        queryClient.setQueryData(["post", postId], context.previousPost);
+      }
+      if (context?.previousPosts) {
+        queryClient.setQueryData(["posts"], context.previousPosts);
+      }
+      setOptimisticLiked(false);
+      setOptimisticLikeCount(prev => Math.max(0, prev - 1));
+    },
+    onSettled: () => {
+      // First invalidate the specific post query
+      queryClient.invalidateQueries({ queryKey: ["post", postId] });
+      // Force immediate refetch of the posts list to update UI faster
+      queryClient.refetchQueries({ queryKey: ["posts"] });
+    },
+  });
+
+  const { mutate: unlike } = useMutation({
+    mutationFn: async (postId) => {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${api}/posts/${postId}/like`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to unlike post");
+      return res.json();
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["post", postId] });
+      // Also cancel any pending refetches to the posts list
+      await queryClient.cancelQueries({ queryKey: ["posts"] });
+      
+      const previousPost = queryClient.getQueryData(["post", postId]);
+      const currentLikes = previousPost?.post?.likes?.length || 0;
+      const wasLiked = previousPost?.post?.likes?.some(like => like.userId === Auth?.id);
+
+      if (wasLiked) {
+        setOptimisticLikeCount(Math.max(0, currentLikes - 1));
+      }
+      setOptimisticLiked(false);
+      
+      // Update the posts list optimistically as well
+      const previousPosts = queryClient.getQueryData(["posts"]);
+      if (previousPosts?.posts) {
+        const updatedPosts = {
+          ...previousPosts,
+          posts: previousPosts.posts.map(p => {
+            if (p.id === postId) {
+              // Remove the current user's like
+              const updatedLikes = (p.likes || []).filter(like => like.userId !== Auth?.id);
+              return { ...p, likes: updatedLikes };
+            }
+            return p;
+          })
+        };
+        queryClient.setQueryData(["posts"], updatedPosts);
+      }
+      
+      return { previousPost, previousPosts };
+    },
+    onError: ( context) => {
+      if (context?.previousPost) {
+        queryClient.setQueryData(["post", postId], context.previousPost);
+      }
+      if (context?.previousPosts) {
+        queryClient.setQueryData(["posts"], context.previousPosts);
+      }
+      setOptimisticLiked(true);
+      setOptimisticLikeCount(prev => prev + 1);
+    },
+    onSettled: () => {
+      // First invalidate the specific post query
+      queryClient.invalidateQueries({ queryKey: ["post", postId] });
+      // Force immediate refetch of the posts list to update UI faster
+      queryClient.refetchQueries({ queryKey: ["posts"] });
+    },
+  });
 
   if (error) {
     return (
@@ -73,10 +219,10 @@ export default function Post() {
   }
 
   const post = data.post;
-  const isLiked = post.likes?.some(like => like.userId === Auth?.id);
+  const isLiked = optimisticLiked || post.likes?.some(like => like.userId === Auth?.id);
   
   return (
-    <Card sx={{ mb: 3, mt: 2 }}>
+    <Card sx={{ mb: 3, mt: 2, maxWidth: "1000px", mx: "auto"}}>
       <CardContent>
         <Box
           sx={{
@@ -117,12 +263,12 @@ export default function Post() {
           
           <Box sx={{ display: "flex", gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton 
-                size="small" 
+              <IconButton
+                size="small"
                 sx={{ mr: -0.5 }}
                 onClick={() => setShowComments(!showComments)}
               >
-                <ChatBubbleOutlineIcon fontSize="small" />
+                <InsertCommentIcon fontSize="small"/>
               </IconButton>
               <Typography variant="body2" sx={{ ml: 0.5 }}>
                 {post.comments?.length || 0}
@@ -130,15 +276,15 @@ export default function Post() {
             </Box>
             
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton size="small" sx={{ mr: -0.5 }}>
+              <IconButton size="small" sx={{ mr: -0.5 }} onClick={() => isLiked ? unlike(postId) : like(postId)}>
                 {isLiked ? (
-                  <ThumbUpIcon fontSize="small" color="primary" />
+                  <ThumbUpIcon fontSize="small" color="primary"/>
                 ) : (
-                  <ThumbUpAltOutlined fontSize="small" />
+                  <ThumbUpAltOutlined fontSize="small"/>
                 )}
               </IconButton>
               <Typography variant="body2" sx={{ ml: 0.5 }}>
-                {post.likes?.length || 0}
+              {optimisticLikeCount !== null ? optimisticLikeCount : post.likes?.length || 0}
               </Typography>
             </Box>
           </Box>
@@ -147,15 +293,14 @@ export default function Post() {
         {showComments && (
           <Box sx={{ mt: 2 }}>
             <Divider sx={{ mb: 2 }} />
-            <CommentForm postId={post.id} />
-            
+            <CommentForm postId={postId} />
             <Box sx={{ mt: 2 }}>
               {post.comments && post.comments.length > 0 ? (
                 post.comments.map(comment => (
-                  <Comment 
-                    key={comment.id} 
-                    comment={comment} 
-                    postId={post.id} 
+                  <Comment
+                    key={comment.id}
+                    comment={comment}
+                    postId={postId}
                   />
                 ))
               ) : (

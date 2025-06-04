@@ -2,7 +2,7 @@ import Header from "./components/Header.jsx";
 // you can add .jsx or not
 
 import { Container } from "@mui/material";
-import AppDrawer from "./components/AppDrawer.jsx";
+import ResponsiveDrawer from "./components/ResponsiveDrawer.jsx";
 
 import { Outlet } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,13 +20,19 @@ const queryClient = new QueryClient({
 export default function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <div>
-                <Header />
-                <AppDrawer />
-                <Container sx={{ mt: 4, pt: 8 }} maxWidth="md">
-                    <Outlet />
-                </Container>
-            </div>
+            <Header />
+            <ResponsiveDrawer />
+            
+            <Container 
+                sx={{ 
+                    mt: 4, 
+                    pt: 8
+                }} 
+                maxWidth="lg"
+            >
+                <Outlet />
+            </Container>
+            
             <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
     );

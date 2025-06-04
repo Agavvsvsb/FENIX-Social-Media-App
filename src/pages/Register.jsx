@@ -1,6 +1,4 @@
 import { Box, Typography, OutlinedInput, Button } from "@mui/material";
-
-import { useApp } from "../AppProvider";
 import { useNavigate } from "react-router";
 
 import { useForm } from "react-hook-form";
@@ -21,7 +19,6 @@ async function postUser(userdata) {
 }
 
 export default function Register() {
-    const { setAuth } = useApp();
 
     const navigate = useNavigate();
 
@@ -43,7 +40,7 @@ export default function Register() {
     };
 
     return (
-        <Box>
+        <Box sx={{maxWidth: "800px", mx: "auto"}}>
             <Typography variant="h4">Register</Typography>
 
             <form onSubmit={handleSubmit(submitRegister)}>
@@ -51,7 +48,7 @@ export default function Register() {
                     {...register("name", { required: true })}
                     fullWidth
                     placeholder="name"
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 4 }}
                 />
                 {errors.name && (
                     <Typography color="error">Name is required</Typography>
@@ -61,7 +58,7 @@ export default function Register() {
                     {...register("username", { required: true })}
                     fullWidth
                     placeholder="username"
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 4 }}
                 />
                 {errors.username && (
                     <Typography color="error">Username is required</Typography>
@@ -70,26 +67,27 @@ export default function Register() {
                     {...register("bio")}
                     fullWidth
                     placeholder="tell us about your sis and her ph (Optional)"
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 4 }}
                 />
 
                 <OutlinedInput
                     {...register("password", { required: true })}
                     fullWidth
                     placeholder="password"
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 4 }}
                 />
                 {errors.password && (
                     <Typography color="error">Password is required</Typography>
                 )}
 
                 <Button
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 4 }}
                     type="submit"
                     fullWidth
                     variant="contained"
+                    disabled={create.isPending}
                 >
-                    Register
+                    {create.isPending ? "Registering..." : "Register"}
                 </Button>
             </form>
         </Box>
