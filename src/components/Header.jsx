@@ -149,7 +149,6 @@ export default function Header() {
                         aria-label="open drawer"
                         edge="start"
                         onClick={handleDrawerToggle}
-                        size="small"
                         sx={{
                             mr: 2,
                             ...(location.pathname === "/"
